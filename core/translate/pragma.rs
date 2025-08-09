@@ -107,6 +107,16 @@ fn update_pragma(
             });
             Ok((program, TransactionMode::Write))
         }
+        PragmaName::BusyTimeout => {
+            // Accept numeric or string literal; store milliseconds on connection
+            let timeout_ms = match parse_signed_number(&value)? {
+                Value::Integer(i) => i as i32,
+                Value::Float(f) => f as i32,
+                _ => 0,
+            };
+            connection.set_busy_timeout_ms(timeout_ms);
+            Ok((program, TransactionMode::None))
+        }
         PragmaName::CacheSize => {
             let cache_size = match parse_signed_number(&value)? {
                 Value::Integer(size) => size,
@@ -322,6 +332,12 @@ fn query_pragma(
             program.add_pragma_result_column(pragma.to_string());
             program.emit_result_row(register, 1);
             Ok((program, TransactionMode::Read))
+        }
+        PragmaName::BusyTimeout => {
+            program.emit_int(connection.get_busy_timeout_ms() as i64, register);
+            program.emit_result_row(register, 1);
+            program.add_pragma_result_column(pragma.to_string());
+            Ok((program, TransactionMode::None))
         }
         PragmaName::CacheSize => {
             program.emit_int(connection.get_cache_size() as i64, register);

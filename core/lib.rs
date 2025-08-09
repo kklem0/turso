@@ -368,6 +368,7 @@ impl Database {
             closed: Cell::new(false),
             attached_databases: RefCell::new(DatabaseCatalog::new()),
             query_only: Cell::new(false),
+            busy_timeout_ms: Cell::new(0),
         });
         let builtin_syms = self.builtin_syms.borrow();
         // add built-in extensions symbols to the connection to prevent having to load each time
@@ -729,6 +730,7 @@ pub struct Connection {
     /// Attached databases
     attached_databases: RefCell<DatabaseCatalog>,
     query_only: Cell<bool>,
+    busy_timeout_ms: Cell<i32>,
 }
 
 impl Connection {
@@ -1748,6 +1750,15 @@ impl Connection {
 
     pub fn set_query_only(&self, value: bool) {
         self.query_only.set(value);
+    }
+
+    pub fn set_busy_timeout_ms(&self, ms: i32) {
+        // Clamp to non-negative; SQLite treats negative as zero
+        self.busy_timeout_ms.set(ms.max(0));
+    }
+
+    pub fn get_busy_timeout_ms(&self) -> i32 {
+        self.busy_timeout_ms.get()
     }
 
     #[cfg(feature = "fs")]

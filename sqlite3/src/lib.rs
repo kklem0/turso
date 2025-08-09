@@ -7,6 +7,7 @@ use tracing::trace;
 use turso_core::{CheckpointMode, LimboError, Value};
 
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 macro_rules! stub {
     () => {
@@ -192,7 +193,13 @@ pub unsafe extern "C" fn sqlite3_progress_handler(
 
 #[no_mangle]
 pub unsafe extern "C" fn sqlite3_busy_timeout(_db: *mut sqlite3, _ms: ffi::c_int) -> ffi::c_int {
-    stub!();
+    if _db.is_null() {
+        return SQLITE_MISUSE;
+    }
+    let db: &mut sqlite3 = &mut *_db;
+    let inner = db.inner.lock().unwrap();
+    inner.conn.set_busy_timeout_ms(_ms);
+    SQLITE_OK
 }
 
 #[no_mangle]
@@ -254,21 +261,37 @@ pub unsafe extern "C" fn sqlite3_finalize(stmt: *mut sqlite3_stmt) -> ffi::c_int
 pub unsafe extern "C" fn sqlite3_step(stmt: *mut sqlite3_stmt) -> ffi::c_int {
     let stmt = &mut *stmt;
     let db = &mut *stmt.db;
+    let mut busy_start: Option<Instant> = None;
     loop {
-        let _db = db.inner.lock().unwrap();
-        if let Ok(result) = stmt.stmt.step() {
-            match result {
-                turso_core::StepResult::IO => {
-                    stmt.stmt.run_once().unwrap();
-                    continue;
-                }
-                turso_core::StepResult::Done => return SQLITE_DONE,
-                turso_core::StepResult::Interrupt => return SQLITE_INTERRUPT,
-                turso_core::StepResult::Row => return SQLITE_ROW,
-                turso_core::StepResult::Busy => return SQLITE_BUSY,
+        let inner_guard = db.inner.lock().unwrap();
+        let timeout_ms = inner_guard.conn.get_busy_timeout_ms();
+        match stmt.stmt.step() {
+            Ok(turso_core::StepResult::IO) => {
+                // Allow IO to progress
+                drop(inner_guard);
+                stmt.stmt.run_once().unwrap();
+                continue;
             }
-        } else {
-            return SQLITE_ERROR;
+            Ok(turso_core::StepResult::Done) => return SQLITE_DONE,
+            Ok(turso_core::StepResult::Interrupt) => return SQLITE_INTERRUPT,
+            Ok(turso_core::StepResult::Row) => return SQLITE_ROW,
+            Ok(turso_core::StepResult::Busy) => {
+                if timeout_ms <= 0 {
+                    return SQLITE_BUSY;
+                }
+                let start = busy_start.get_or_insert_with(Instant::now);
+                let elapsed = start.elapsed();
+                if elapsed >= Duration::from_millis(timeout_ms as u64) {
+                    return SQLITE_BUSY;
+                }
+                // Backoff up to 1000ms like SQLite's busy handler pattern
+                let elapsed_ms = elapsed.as_millis() as u64;
+                let delay_ms = core::cmp::min(1 + (elapsed_ms % 1000), 1000);
+                drop(inner_guard);
+                std::thread::sleep(Duration::from_millis(delay_ms));
+                continue;
+            }
+            Err(_) => return SQLITE_ERROR,
         }
     }
 }

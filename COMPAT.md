@@ -106,8 +106,7 @@ Turso aims to be fully compatible with SQLite, with opt-in features not supporte
 | PRAGMA application_id            | Yes        |                                              |
 | PRAGMA auto_vacuum               | No         |                                              |
 | PRAGMA automatic_index           | No         |                                              |
-| PRAGMA busy_timeout              | No         |                                              |
-| PRAGMA busy_timeout              | No         |                                              |
+| PRAGMA busy_timeout              | Yes        |                                                              |
 | PRAGMA cache_size                | Yes        |                                              |
 | PRAGMA cache_spill               | No         |                                              |
 | PRAGMA case_sensitive_like       | Not Needed | deprecated in SQLite                         |

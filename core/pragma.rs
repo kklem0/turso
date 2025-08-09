@@ -39,6 +39,10 @@ pub fn pragma_for(pragma: &PragmaName) -> Pragma {
             PragmaFlags::NoColumns1 | PragmaFlags::Result0,
             &["application_id"],
         ),
+        BusyTimeout => Pragma::new(
+            PragmaFlags::Result0 | PragmaFlags::NoColumns1,
+            &["busy_timeout"],
+        ),
         CacheSize => Pragma::new(
             PragmaFlags::NeedSchema
                 | PragmaFlags::Result0

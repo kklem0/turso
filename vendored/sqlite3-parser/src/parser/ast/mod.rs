@@ -1798,6 +1798,8 @@ pub enum PragmaName {
     ApplicationId,
     /// set the autovacuum mode
     AutoVacuum,
+    /// busy_timeout pragma
+    BusyTimeout,
     /// `cache_size` pragma
     CacheSize,
     /// List databases
