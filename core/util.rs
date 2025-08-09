@@ -1060,7 +1060,9 @@ pub fn parse_signed_number(expr: &Expr) -> Result<Value> {
 
 pub fn parse_string(expr: &Expr) -> Result<String> {
     match expr {
-        Expr::Name(ast::Name::Ident(s)) | Expr::Name(ast::Name::Quoted(s))
+        Expr::Literal(Literal::String(s)) => Ok(s.clone()),
+        // Support legacy quoted-name with single quotes
+        Expr::Name(ast::Name::Quoted(s))
             if s.len() >= 2 && s.starts_with("'") && s.ends_with("'") =>
         {
             Ok(s[1..s.len() - 1].to_string())
