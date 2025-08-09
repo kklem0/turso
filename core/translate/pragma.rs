@@ -117,6 +117,12 @@ fn update_pragma(
             connection.set_busy_timeout_ms(timeout_ms);
             Ok((program, TransactionMode::None))
         }
+        PragmaName::CompileOptions => {
+            // Return an empty set of compile options to mimic SQLite behavior when
+            // unavailable. Each row is one option; empty means none.
+            // No rows emitted.
+            Ok((program, TransactionMode::None))
+        }
         PragmaName::CacheSize => {
             let cache_size = match parse_signed_number(&value)? {
                 Value::Integer(size) => size,
@@ -337,6 +343,12 @@ fn query_pragma(
             program.emit_int(connection.get_busy_timeout_ms() as i64, register);
             program.emit_result_row(register, 1);
             program.add_pragma_result_column(pragma.to_string());
+            Ok((program, TransactionMode::None))
+        }
+        PragmaName::CompileOptions => {
+            // Emit zero rows, but still set up the single column header
+            let pragma = pragma_for(&pragma);
+            program.add_pragma_result_column(pragma.columns[0].to_string());
             Ok((program, TransactionMode::None))
         }
         PragmaName::CacheSize => {

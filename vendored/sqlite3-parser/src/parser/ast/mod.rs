@@ -1806,6 +1806,8 @@ pub enum PragmaName {
     DatabaseList,
     /// Encoding - only support utf8
     Encoding,
+    /// compile_options pragma
+    CompileOptions,
     /// Run integrity check on the database file
     IntegrityCheck,
     /// `journal_mode` pragma

@@ -55,6 +55,7 @@ pub fn pragma_for(pragma: &PragmaName) -> Pragma {
             PragmaFlags::Result0 | PragmaFlags::NoColumns1,
             &["encoding"],
         ),
+        CompileOptions => Pragma::new(PragmaFlags::Result0, &["compile_options"]),
         JournalMode => Pragma::new(
             PragmaFlags::NeedSchema | PragmaFlags::Result0 | PragmaFlags::SchemaReq,
             &["journal_mode"],

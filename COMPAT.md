@@ -113,7 +113,7 @@ Turso aims to be fully compatible with SQLite, with opt-in features not supporte
 | PRAGMA cell_size_check           | No         |                                              |
 | PRAGMA checkpoint_fullsync       | No         |                                              |
 | PRAGMA collation_list            | No         |                                              |
-| PRAGMA compile_options           | No         |                                              |
+| PRAGMA compile_options           | Yes        |                                              |
 | PRAGMA count_changes             | Not Needed | deprecated in SQLite                         |
 | PRAGMA data_store_directory      | Not Needed | deprecated in SQLite                         |
 | PRAGMA data_version              | No         |                                              |
